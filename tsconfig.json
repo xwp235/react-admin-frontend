@@ -28,7 +28,10 @@
       ]
     }
   },
-  "include": ["src", "types.d.ts"],
+  "include": [
+    "src",
+    "types.d.ts"
+  ],
   "references": [
     {
       "path": "./tsconfig.node.json"
