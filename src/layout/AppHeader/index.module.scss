@@ -1,0 +1,28 @@
+.navHeader {
+  height: 50px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 20px;
+  background-color: var(--nav-header-bg-color);
+  color: var(--dark-color);
+
+  .left, .right {
+    display: flex;
+    align-items: center;
+  }
+
+  .left {
+    justify-content: center;
+
+    .toggleBtn {
+      cursor: pointer;
+      margin-right: 10px;
+    }
+  }
+
+  .nickname {
+    cursor: pointer;
+    color: var(--nav-header-color);
+  }
+}

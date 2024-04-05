@@ -1,0 +1,19 @@
+.footer {
+  text-align: center;
+  line-height: 30px;
+  color: var(--footer-color);
+  font-size: 14px;
+  margin-top: 20px;
+
+  :global(a) {
+    color: var(--footer-color);
+
+    &:hover {
+      color: var(--main-color);
+    }
+  }
+
+  :global(.gutter) {
+    margin: 0 10px;
+  }
+}

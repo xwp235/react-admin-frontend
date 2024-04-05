@@ -1,16 +1,36 @@
 import {App as AntdApp, ConfigProvider} from 'antd'
 import {RouterProvider} from 'react-router-dom'
-import './App.scss'
+import styles from './App.module.scss'
 import AntdGlobal from './utils/AntdGlobal'
 import router from './router'
-import {CSS_MAIN_BG} from './config/constants.ts'
 
 function App() {
+
   return (
     <ConfigProvider
       theme={{
+        components: {
+          Menu: {
+            horizontalItemSelectedBg: styles.menuBgColor,
+            popupBg: styles.menuPopupBgColor,
+            itemBg: styles.menuBgColor,
+            itemColor: styles.menuColor,
+            itemMarginInline: 0,
+            itemMarginBlock: 0,
+            itemHoverColor: styles.menuItemHoverColor,
+            itemActiveBg: styles.menuItemActiveBgColor,
+            itemBorderRadius: 0,
+            itemSelectedBg: styles.menuItemSelectedBgColor,
+            itemSelectedColor: styles.menuItemSelectedColor,
+            subMenuItemBg: styles.menuBgColor,
+            subMenuItemBorderRadius: 0,
+            activeBarBorderWidth: 0,
+          }
+        },
         token: {
-          colorPrimary: CSS_MAIN_BG
+          colorPrimary: styles.mainColor,
+          colorBgElevated: styles.elevatedBgColor,
+          colorBgSpotlight: styles.spotlightBgColor
         }
         // algorithm: isDark ? theme.darkAlgorithm : theme.defaultAlgorithm
       }}

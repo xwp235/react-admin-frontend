@@ -5,10 +5,13 @@ import axiosRetry from 'axios-retry'
 import AppText from '@/i18n'
 import {hideLoading, showLoading} from '@/utils/loading'
 import {message} from './AntdGlobal'
+import storage from 'good-storage'
+import {LOGIN_KEEP_STATUS} from '@/config/constants'
 
 interface HttpResponse<T = any> {
   code: number
   msg: string
+  success: boolean
   data: T
 }
 
@@ -37,11 +40,11 @@ const instance = axios.create({
 })
 
 axiosRetry(instance, {
-  retries: 1
+  retries: 1,
   // 重试条件
-  // retryCondition: error => {
-  //   return error.code === 'ECONNABORTED' // 仅这个错误下重试请求
-  // }
+  retryCondition: error => {
+    return error.code !== 'ERR_BAD_RESPONSE' || error.response?.status !== 500
+  }
 })
 
 // 请求拦截器
@@ -50,10 +53,6 @@ instance.interceptors.request.use(
     if (config.showLoading) {
       showLoading()
     }
-    // const token = storage.get(TOKEN)
-    // if (token) {
-    //   config.headers.token = token
-    // }
     if (env.mock) {
       config.baseURL = env.mockApi
     } else {
@@ -64,7 +63,10 @@ instance.interceptors.request.use(
     }
   },
   throttleErrorCallback(error => {
-    return Promise.reject(error)
+    const errMsg = error.message ? error.message : error
+    hideLoading()
+    message.error(errMsg)
+    return Promise.reject(errMsg)
   })
 )
 
@@ -76,42 +78,52 @@ instance.interceptors.response.use(
       return response
     }
     const data: HttpResponse = !(response.request instanceof XMLHttpRequest) ? response : response.data
-    if (data.code === 500001) {
-      // 未登录或登录失效时返回登录页面
-      handleError(new Error(data.msg))
-      // storage.remove(TOKEN)
-      location.href = `/login?callback=${encodeURIComponent(location.href)}`
-    } else if (data.code !== 0) {
+    // 如果请求是成功的（response的status为200且data的success为true）
+    const {code, msg, success} = data
+    if (success) {
+      if (code === 11012 || code === 11011) {
+        // 登录过期时要求跳转回登陆页面
+        storage.set(LOGIN_KEEP_STATUS, false)
+        location.href = `/login?callback=${encodeURIComponent(location.href)}`
+      }
+      return data.data
+    } else {
       if (response.config.showError === false) {
         return Promise.resolve(data)
       } else {
-        handleError(new Error(data.msg))
+        handleError(new Error(msg))
         return Promise.reject(data)
       }
     }
-    return data.data
   },
   throttleErrorCallback(error => {
+    // response的状态码不为200时会走这里
     hideLoading()
-    message.error(error.message)
-    return Promise.reject(error.message)
+    const errMsg = error.message ? error.message : error
+    message.error(errMsg)
+    return Promise.reject(errMsg)
   })
 )
 
 function throttleErrorCallback(callback: { (error: any): Promise<never>; (arg0: AxiosError<unknown, any>): any }) {
   const handledErrors = new WeakSet()
-  return (error: AxiosError) => {
-    if (handledErrors.has(error)) {
-      return Promise.reject(error)
+  return (error: AxiosError | string) => {
+    if (!(error instanceof AxiosError)) {
+      handledErrors.add(new Error(error))
+    } else {
+      if (handledErrors.has(error)) {
+        return Promise.reject(error)
+      }
+      handledErrors.add(error)
     }
-    handledErrors.add(error)
     return callback(error)
   }
 }
 
-function handleError(e: unknown): void {
+function handleError(e: unknown, callback = () => {
+}): void {
   if (e instanceof Error) {
-    message.error(e.message)
+    message.error(e.message, () => callback())
   } else {
     message.error('An unknown error occurred.')
   }
